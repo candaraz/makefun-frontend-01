@@ -25,7 +25,7 @@ export async function show(root, slug) {
         if (v == null) return '<td class="num">—</td>';
         if (String(c.source || '').toLowerCase().includes('micro')) v = Number(v) / 1000000;
         const n = Number(v);
-        const formatted = Number.isFinite(n) ? (String(c.source || '').toLowerCase().includes('micro') ? money(n) : n.toLocaleString('en-US', { maximumFractionDigits: c.precision ?? 4 })) : esc(v);
+        const formatted = Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: String(c.source || '').toLowerCase().includes('micro') ? 6 : c.precision ?? 4 }) : esc(v);
         return `<td class="num">${formatted}</td>`;
       }).join('')}${record ? `<td>${esc(rec.wins ?? 0)}–${esc(rec.draws ?? 0)}–${esc(rec.losses ?? 0)}</td>` : ''}</tr>`;
     }).join('');

@@ -9,5 +9,6 @@ export function left(x) {
 }
 export const pot = (x) => money(x.potUsd ?? x.pot ?? x.rewardAmount);
 export function image(url, alt, cls = '') {
-  return url ? `<img class="${cls}" crossorigin="anonymous" src="${esc(url)}" alt="${esc(alt)}">` : '';
+  const src = typeof url === 'string' ? url : url?.url;
+  return src ? `<img class="${cls}" crossorigin="anonymous" src="${esc(src.startsWith('/') ? `https://make.fun${src}` : src)}" alt="${esc(alt)}">` : '';
 }
