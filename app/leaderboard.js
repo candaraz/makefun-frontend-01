@@ -1,43 +1,8 @@
-import { leaderboardData } from './api.js';
-import { esc, money } from './format.js';
-
-export async function show(root, slug) {
-  const data = await leaderboardData(slug);
-  const entries = data.entries || [];
-  const columns = (data.columns || []).filter((c) => !c.hidden);
-  const cols = columns.length ? columns : [{ key: 'score', title: 'Score', source: '', precision: 2 }];
-  const record = entries.some((e) => e.record || e.judgeRecord || e.judge);
-  const pages = Math.max(1, Math.ceil(entries.length / 50));
-  let page = 0;
-  const heading = data.competition?.title || data.title || slug;
-  document.title = `Leaderboard · ${heading} | make.fun`;
-  root.innerHTML = `<nav class="crumb"><a href="#/bounty/${encodeURIComponent(slug)}">← ${esc(heading)}</a><span>/</span><span>Leaderboard</span></nav><section class="table-hero"><div><p class="eyebrow">LIVE STANDINGS</p><h1>${esc(heading)}</h1><p>Entries are ranked on the competition's published scoring columns.</p></div><strong>${entries.length.toLocaleString()} <small>entries</small></strong></section>
-    <div class="table-wrap"><table class="leader-table"><caption>${esc(heading)} leaderboard · ${entries.length.toLocaleString()} entries</caption><thead><tr><th scope="col">Rank</th><th scope="col">Entrant</th>${cols.map((c) => `<th scope="col" class="num">${esc(c.title || c.key)}</th>`).join('')}${record ? '<th scope="col">W–D–L</th>' : ''}</tr></thead><tbody id="leader-rows"></tbody></table></div>
-    <div class="pager"><button type="button" data-page="-1" aria-label="Previous page">← Previous</button><span id="page-label"></span><button type="button" data-page="1" aria-label="Next page">Next →</button></div>`;
-  const body = root.querySelector('#leader-rows'), label = root.querySelector('#page-label');
-  function paint() {
-    const batch = entries.slice(page * 50, (page + 1) * 50);
-    body.innerHTML = batch.map((e, i) => {
-      const handle = e.handle || 'unknown', values = e.values || {};
-      const rec = e.judgeRecord || e.judge || e.record || {};
-      return `<tr><td class="rank">${esc(e.rank ?? page * 50 + i + 1)}</td><td><a class="entrant" href="#/profile/${encodeURIComponent(handle)}">${esc(handle)}</a><small>${esc(e.title || e.status || '')}</small></td>${cols.map((c) => {
-        let v = values[c.key] ?? e[c.key];
-        if (v == null) return '<td class="num">—</td>';
-        if (String(c.source || '').toLowerCase().includes('micro')) v = Number(v) / 1000000;
-        const n = Number(v);
-        const formatted = Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: String(c.source || '').toLowerCase().includes('micro') ? 6 : c.precision ?? 4 }) : esc(v);
-        return `<td class="num">${formatted}</td>`;
-      }).join('')}${record ? `<td>${esc(rec.wins ?? 0)}–${esc(rec.draws ?? 0)}–${esc(rec.losses ?? 0)}</td>` : ''}</tr>`;
-    }).join('');
-    label.textContent = `Page ${page + 1} of ${pages}`;
-    root.querySelector('[data-page="-1"]').disabled = page === 0;
-    root.querySelector('[data-page="1"]').disabled = page === pages - 1;
-  }
-  root.querySelector('.pager').addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-page]');
-    if (!button || button.disabled) return;
-    page = Math.min(pages - 1, Math.max(0, page + Number(button.dataset.page)));
-    paint();
-  });
-  paint();
+import {leaderboardData,bountyData} from './api.js';import {esc,money,image,left} from './format.js';
+export async function show(root,slug){let [data,b]=await Promise.all([leaderboardData(slug),bountyData(slug)]),entries=data.entries||[],cols=(data.columns||[]).filter(c=>!c.hidden),key=cols.find(c=>c.key==='judge')?.key||cols[0]?.key||'score',selected=entries[0]||null,query='';let heading=data.competition?.title||data.title||slug;
+const val=(e,k)=>Number(e?.values?.[k]??e?.[k]??0),score=e=>val(e,key),fmt=n=>(n/1e6).toFixed(6),record=e=>e?.judgeRecord||e?.judge||e?.record||{},prize=e=>{let x=Number(e?.prizeUsd??e?.prize_usd??0);return x?money(x):'—'};
+document.title=`Leaderboard · ${heading} | make.fun`;root.innerHTML=`<nav class="crumb"><a href="#/bounty/${encodeURIComponent(slug)}">← ${esc(heading)}</a><span>/</span><span>Leaderboard</span></nav><header class="leader-hero"><div><p class="eyebrow">LIVE STANDINGS</p><h1>${esc(heading)}</h1><p>Ranked by the published judge score · ${entries.length.toLocaleString()} entries</p></div></header><section class="leader-stats"><div><span>LIVE POT</span><b>${money(b.potUsd??b.rewardAmount)}</b></div><div><span>TIME LEFT</span><b data-deadline="${esc(b.deadline)}">${left(b.deadline)}</b></div><div><span>RANKED ENTRIES</span><b>${entries.length.toLocaleString()}</b></div><div><span>LEADER</span><b>${esc(entries[0]?.handle||'—')} <small>${entries[0]?fmt(score(entries[0])):''}</small></b></div></section><div class="leader-filter"><label>Find an entrant<input id="entrant-search" type="search" placeholder="Filter by handle"></label><span id="window-label"></span></div><div class="leader-layout"><div class="virtual-list"><div class="virtual-head"><span>Rank</span><span>Entrant</span><span>Judge score · 90% range</span><span>W–D–L</span><span>Prize</span></div><div id="leader-rows"></div></div><aside id="entrant-card" class="entrant-card"></aside></div>`;
+let body=root.querySelector('#leader-rows'),label=root.querySelector('#window-label'),filtered=entries;function renderCard(e){if(!e){root.querySelector('#entrant-card').innerHTML='<p>Select an entrant to inspect their profile.</p>';return}let r=record(e),lo=Number(e.interval?.low??e.values?.judge_low??e.judge_low??score(e)),hi=Number(e.interval?.high??e.values?.judge_high??e.judge_high??score(e));root.querySelector('#entrant-card').innerHTML=`${image(e.image,e.handle,'avatar')}<p class="eyebrow">SELECTED ENTRANT</p><h2>${esc(e.handle||'unknown')}</h2><p class="muted">${esc(e.bio||'Public make.fun entrant')}</p><div class="card-stat"><span>RANK</span><b>#${esc(e.rank??'—')} <small>of ${entries.length.toLocaleString()}</small></b></div><div class="card-stat"><span>SCORE · 90% RANGE</span><b>${fmt(score(e))}<small>${fmt(lo)} – ${fmt(hi)}</small></b></div><div class="card-stat"><span>RECORD</span><b>${r.wins??0}–${r.draws??0}–${r.losses??0}</b></div><div class="card-stat"><span>PRIZE</span><b>${prize(e)}</b></div><div class="card-stat"><span>ENTERED</span><b>${e.received_at?new Date(e.received_at).toLocaleDateString('en-US',{dateStyle:'medium'}):'—'}</b></div><a class="button" href="#/profile/${encodeURIComponent(e.handle||'')}">Open full profile ↗</a>`}
+function paint(){let lineHeight=72,viewport=560,start=Math.max(0,Math.floor((root.querySelector('.virtual-list').scrollTop||0)/lineHeight)-3),count=Math.ceil(viewport/lineHeight)+7,end=Math.min(filtered.length,start+count);body.innerHTML=filtered.slice(start,end).map((e,i)=>{let rank=e.rank??start+i+1,r=record(e),lo=Number(e.interval?.low??e.values?.judge_low??score(e)),hi=Number(e.interval?.high??e.values?.judge_high??score(e));return `<button class="leader-row ${selected===e?'chosen':''}" data-index="${start+i}"><span class="rank">#${esc(rank)}</span><span><b>${esc(e.handle||'unknown')}</b><small>${esc(e.title||e.status||'Entry')}</small></span><span class="score-cell">${fmt(score(e))}<small>${fmt(lo)} – ${fmt(hi)}</small></span><span>${r.wins??0}–${r.draws??0}–${r.losses??0}</span><strong>${prize(e)}</strong></button>`}).join('');label.textContent=`Rows ${filtered.length?start+1:0} to ${end} of ${filtered.length.toLocaleString()} · ${end-start} in the DOM`;body.querySelectorAll('.leader-row').forEach(row=>row.addEventListener('click',()=>{selected=filtered[Number(row.dataset.index)];paint();renderCard(selected)}))}
+root.querySelector('.virtual-list').addEventListener('scroll',paint);root.querySelector('#entrant-search').addEventListener('input',e=>{query=e.target.value.toLowerCase();filtered=entries.filter(x=>(x.handle||'').toLowerCase().includes(query));root.querySelector('.virtual-list').scrollTop=0;paint()});renderCard(selected);paint();
 }

@@ -1,0 +1,1 @@
+export const ready=new Promise(resolve=>{let link=document.querySelector('#surface-style');if(link){if(link.sheet)resolve();else link.addEventListener('load',resolve,{once:true});return}link=document.createElement('link');link.id='surface-style';link.rel='stylesheet';link.href='/style.css';link.onload=resolve;link.onerror=resolve;document.head.append(link)});
