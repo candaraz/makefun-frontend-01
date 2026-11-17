@@ -5,9 +5,9 @@
 // and bytes, and your source), with the vendored make.fun library. Leave vendor/makefun-frontend.ts as it is: the
 // scorer requires dossier.json to be byte for byte what its own copy writes.
 //
-// A starting point, not a winner: a plain board of open bounties and a page for each. Build your frontend in app/
-// (a leaderboard, profiles, speed, ease of use), put 3 PNG or JPEG screenshots of it running on live data in
-// screenshots/ (the first by name is the cover; shots.json says which views this starter's were taken of), and run it.
+// A compact live frontend with prize-first bounty details embedded on the board and available by hash route. Keep
+// three PNG or JPEG screenshots of the live board, leaderboard, and profile in screenshots/; shots.json identifies
+// each view, and the first by name is the cover image consumed by the dossier.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
