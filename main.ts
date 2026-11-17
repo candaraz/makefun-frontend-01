@@ -5,7 +5,7 @@
 // and bytes, and your source), with the vendored make.fun library. Leave vendor/makefun-frontend.ts as it is: the
 // scorer requires dossier.json to be byte for byte what its own copy writes.
 //
-// A persistent live board rail, compact prize-first bounty detail, windowed leaderboard and grouped profiles share hash routes. Keep
+// One request fills the live rail and selected bounty detail; public profiles and windowed standings use hash routes. Keep
 // three PNG or JPEG screenshots of the live board, leaderboard, and profile in screenshots/; shots.json identifies
 // each view, and the first by name is the cover image consumed by the dossier.
 //
